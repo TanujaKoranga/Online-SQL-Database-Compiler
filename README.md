@@ -37,7 +37,7 @@ final/
 
 ## Contributors
 
-Tanuja Koranga
-Tripti Joshi
-Tanishka Bisht
-Tanishka Upadhyay
+Tanuja Koranga,
+Tripti Joshi,
+Tanishka Bisht,
+Tanishka Upadhyay.
