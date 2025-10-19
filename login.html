@@ -1,0 +1,126 @@
+<!-- login.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL Compiler - Login/Register</title>
+<style>
+/* --- same CSS as before --- */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+.container { background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); width: 100%; max-width: 420px; overflow: hidden; }
+.header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white; }
+.header h1 { font-size: 28px; margin-bottom: 5px; }
+.header p { font-size: 14px; opacity: 0.9; }
+.form-container { padding: 40px; }
+.tabs { display: flex; margin-bottom: 30px; border-bottom: 2px solid #e0e0e0; }
+.tab { flex:1; padding: 12px; text-align:center; cursor:pointer; font-weight:600; color:#888; transition: all 0.3s; border-bottom:3px solid transparent; margin-bottom:-2px; }
+.tab.active { color:#667eea; border-bottom-color:#667eea; }
+.form { display:none; }
+.form.active { display:block; animation: fadeIn 0.3s; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
+.form-group { margin-bottom:20px; }
+label { display:block; margin-bottom:8px; color:#333; font-weight:500; font-size:14px; }
+input { width:100%; padding:12px 15px; border:2px solid #e0e0e0; border-radius:6px; font-size:14px; transition:border-color 0.3s; }
+input:focus { outline:none; border-color:#667eea; }
+.btn { width:100%; padding:14px; background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:white; border:none; border-radius:6px; font-size:16px; font-weight:600; cursor:pointer; transition: transform 0.2s, box-shadow 0.2s; }
+.btn:hover { transform:translateY(-2px); box-shadow:0 5px 20px rgba(102,126,234,0.4); }
+.btn:active { transform:translateY(0); }
+.message { padding:12px; margin-bottom:20px; border-radius:6px; font-size:14px; display:none; }
+.message.success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
+.message.error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const supabaseUrl = 'https://xhpgqhqldzowwdiwgevk.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocGdxaHFsZHpvd3dkaXdnZXZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDk1NDQsImV4cCI6MjA3NjA4NTU0NH0.VpX0uGIMyDih9PRDDVpPQugu1G7idSBhb_Z5DRHvcrU';
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseAnonKey);
+</script>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>SQL Learning Studio</h1>
+    <p>Write, Execute, and Learn SQL Online</p>
+  </div>
+
+  <div class="form-container">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('login')">Login</div>
+      <div class="tab" onclick="switchTab('register')">Register</div>
+    </div>
+
+    <div id="message" class="message"></div>
+
+    <form id="loginForm" class="form active" onsubmit="handleLogin(event)">
+      <div class="form-group"><label>Email</label><input type="email" id="loginEmail" required></div>
+      <div class="form-group"><label>Password</label><input type="password" id="loginPassword" required></div>
+      <button type="submit" class="btn">Login</button>
+    </form>
+
+    <form id="registerForm" class="form" onsubmit="handleRegister(event)">
+      <div class="form-group"><label>Full Name</label><input type="text" id="registerName" required></div>
+      <div class="form-group"><label>Email</label><input type="email" id="registerEmail" required></div>
+      <div class="form-group"><label>Password</label><input type="password" id="registerPassword" required></div>
+      <div class="form-group"><label>Confirm Password</label><input type="password" id="registerConfirmPassword" required></div>
+      <button type="submit" class="btn">Register</button>
+    </form>
+  </div>
+</div>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.form').forEach(f => f.classList.remove('active'));
+  if (tab === 'login') {
+    document.querySelector('.tab:nth-child(1)').classList.add('active');
+    document.getElementById('loginForm').classList.add('active');
+  } else {
+    document.querySelector('.tab:nth-child(2)').classList.add('active');
+    document.getElementById('registerForm').classList.add('active');
+  }
+}
+
+function showMessage(text,type){
+  const msg=document.getElementById('message');
+  msg.textContent=text; msg.className=`message ${type}`; msg.style.display='block';
+}
+
+async function handleLogin(e){
+  e.preventDefault();
+  const email=document.getElementById('loginEmail').value;
+  const password=document.getElementById('loginPassword').value;
+  try{
+    const { data, error } = await supabaseClient.auth.signInWithPassword({email,password});
+    if(error) throw error;
+    showMessage('Login successful!','success');
+
+    // ✅ Inform backend about session
+    await fetch('/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ name: email.split('@')[0], email })
+    });
+
+    setTimeout(()=>window.location.href='index.html',1000);
+  }catch(err){ showMessage(err.message,'error'); }
+}
+
+async function handleRegister(e){
+  e.preventDefault();
+  const name=document.getElementById('registerName').value;
+  const email=document.getElementById('registerEmail').value;
+  const password=document.getElementById('registerPassword').value;
+  const confirm=document.getElementById('registerConfirmPassword').value;
+  if(password!==confirm) return showMessage('Passwords do not match!','error');
+  try{
+    const { data, error } = await supabaseClient.auth.signUp({email,password,options:{data:{full_name:name}}});
+    if(error) throw error;
+    showMessage('Registered! Check your email to confirm.','success');
+    setTimeout(()=>switchTab('login'),1500);
+  }catch(err){ showMessage(err.message,'error'); }
+}
+</script>
+</body>
+</html>
